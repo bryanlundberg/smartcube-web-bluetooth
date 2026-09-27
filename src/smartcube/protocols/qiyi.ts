@@ -139,7 +139,7 @@ class QiYiConnection implements SmartCubeConnection {
     }
 
     private sendMessage(content: number[]): Promise<void> {
-        if (!this.cubeChrct) return Promise.reject();
+        if (!this.cubeChrct) return Promise.reject(new Error('[QiYi] Not connected'));
         const ch = this.cubeChrct;
         const run = async (): Promise<void> => {
             const msg = [0xfe];
