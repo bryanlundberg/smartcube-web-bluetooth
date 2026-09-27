@@ -6,6 +6,7 @@ import {
   moyuV1EncodeCubeStatePayload,
   moyuV1ParseCubeStatePayload,
 } from './moyu-v1';
+import { SOLVED_FACELET } from '../cubie-cube';
 
 function dvFromBytes(bytes: number[]): DataView {
   return new DataView(Uint8Array.from(bytes).buffer);
@@ -34,6 +35,25 @@ describe('moyu-v1 helpers', () => {
     expect(facelets[31]).toBe('D');
     expect(facelets[40]).toBe('L');
     expect(facelets[49]).toBe('B');
+  });
+
+  it('maps the solved sticker layout to the solved facelet string', () => {
+    expect(moyuStickersToFaceletString(MOYU_V1_SOLVED_STICKERS)).toBe(SOLVED_FACELET);
+  });
+
+  it('maps every MoYu cell to a distinct facelet index', () => {
+    // Give each of the 54 cells a unique sticker id (face * 9 + cell) and check nothing is lost or overwritten.
+    const seen = new Set<number>();
+    for (let face = 0; face < 6; face++) {
+      for (let cell = 0; cell < 9; cell++) {
+        const stickers = MOYU_V1_SOLVED_STICKERS.map((r) => r.map(() => 7));
+        stickers[face]![cell] = 0;
+        const idx = moyuStickersToFaceletString(stickers).indexOf('D');
+        expect(idx).toBeGreaterThanOrEqual(0);
+        seen.add(idx);
+      }
+    }
+    expect(seen.size).toBe(54);
   });
 });
 
