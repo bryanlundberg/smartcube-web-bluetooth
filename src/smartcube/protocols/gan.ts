@@ -261,12 +261,16 @@ async function connectGanDevice(
             { validateDecrypted: isValidGanGen3Packet },
         );
     } else if (pick === 'g4') {
+        const is2x2 = def.isGan251Device(device.name);
         const service = await gatt.getPrimaryService(def.GAN_GEN4_SERVICE);
-        const commandCharacteristic = await service.getCharacteristic(def.GAN_GEN4_COMMAND_CHARACTERISTIC);
+        const commandCharacteristic = await service.getCharacteristic(def.GAN_GEN4_COMMAND_CHARACTERISTIC).catch((error: unknown) => {
+            if (!is2x2) throw error;
+            return service.getCharacteristic(def.GAN_251_COMMAND_CHARACTERISTIC_ALT);
+        });
         const stateCharacteristic = await service.getCharacteristic(def.GAN_GEN4_STATE_CHARACTERISTIC);
-        const key = def.GAN_ENCRYPTION_KEYS[0];
+        const key = is2x2 ? def.GAN_251_ENCRYPTION_KEY : def.GAN_ENCRYPTION_KEYS[0];
         const encrypter = new GanGen4CubeEncrypter(new Uint8Array(key.key), new Uint8Array(key.iv), salt);
-        const driver = new GanGen4ProtocolDriver();
+        const driver = new GanGen4ProtocolDriver(is2x2 ? 2 : 3);
         ganConn = await GanCubeClassicConnection.create(
             bleDevice,
             commandCharacteristic,
@@ -289,7 +293,7 @@ async function connectGanDevice(
 }
 
 const ganProtocol: SmartCubeProtocol = {
-    nameFilters: [{ namePrefix: 'GAN' }, { namePrefix: 'MG' }, { namePrefix: 'AiCube' }],
+    nameFilters: [{ namePrefix: 'GAN' }, { namePrefix: 'gan' }, { namePrefix: 'MG' }, { namePrefix: 'AiCube' }],
     optionalServices: [
         def.GAN_GEN1_PRIMARY_SERVICE,
         def.GAN_GEN1_DEVICE_INFO_SERVICE,
@@ -301,7 +305,7 @@ const ganProtocol: SmartCubeProtocol = {
 
     matchesDevice(device: BluetoothDevice): boolean {
         const name = device.name || '';
-        return name.startsWith('GAN') || name.startsWith('MG') || name.startsWith('AiCube');
+        return def.isGan251Device(name) || name.startsWith('GAN') || name.startsWith('MG') || name.startsWith('AiCube');
     },
 
     gattAffinity(serviceUuids: ReadonlySet<string>, _device: BluetoothDevice): number {

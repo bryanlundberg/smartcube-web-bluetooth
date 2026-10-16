@@ -12,6 +12,7 @@ type SmartCubeMoveEvent = {
 
 type SmartCubeFaceletsEvent = {
     type: "FACELETS";
+    /** URFDLB face order, row-major: 24 characters for 2x2, 54 for 3x3. */
     facelets: string;
 };
 

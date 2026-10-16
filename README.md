@@ -37,7 +37,7 @@ If you are upgrading from the original [gan-web-bluetooth](https://afedotov.gith
 
 Via the generic Smart Cube API (`connectSmartCube`) this library supports:
 
-- GAN Smart Cubes (Gen1 / Gen2 / Gen3 / Gen4)
+- GAN Smart Cubes (Gen1 / Gen2 / Gen3 / Gen4), including GAN 251 UI (2×2)
 - Giiker / Mi Smart / Hi- cubes
 - GoCube / Rubik’s Connected
 - MoYu smart cubes:
@@ -83,6 +83,22 @@ if (conn.capabilities.battery) {
     await conn.sendCommand({ type: "REQUEST_BATTERY" });
 }
 ```
+
+### GAN 251 UI (2×2)
+
+Both `connectSmartCube()` and `connectGanCube()` recognize `GAN251ui_` and
+`GANic251_` advertising names (including lowercase variants). MAC address
+resolution works as for other GAN models. The protocol is reported as `gan-gen4`.
+
+`FACELETS` events contain 24 characters in URFDLB face order, with each 2×2 face
+in row-major order (solved: `UUUURRRRFFFFDDDDLLLLBBBB`). The legacy API also
+provides `state.CP` / `state.CO`; `state.EP` / `state.EO` are empty arrays.
+Gyroscope, battery, hardware requests and explicit `REQUEST_RESET` use the
+existing commands. Connecting does not reset the cube's state.
+
+The firmware reports moves on the U/R/F axes: physical D/L/B turns share the
+opposite-face codes. Gyroscope data describes orientation and does not resolve
+these faces. Use U/R/F scrambles when working directly with reported moves.
 
 ### GAN-specific Smart Cube API (legacy)
 

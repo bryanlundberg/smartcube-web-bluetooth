@@ -1,5 +1,5 @@
 
-import { now, toKociembaFacelets } from './utils';
+import { now, toKociembaFacelets, to2x2Facelets } from './utils';
 import { GanCubeEncrypter } from './gan-cube-encrypter';
 import { GattWriteQueue } from './gan-write-queue';
 import { writeGattCharacteristicValue } from './gatt-characteristic-write';
@@ -61,9 +61,9 @@ type GanCubeState = {
     CP: Array<number>;
     /** Corner Orientation: 8 elements, values from 0 to 2 */
     CO: Array<number>;
-    /** Edge Permutation: 12 elements, values from 0 to 11 */
+    /** Edge Permutation: 12 elements, values from 0 to 11; empty for 2x2 */
     EP: Array<number>;
-    /** Edge Orientation: 12 elements, values from 0 to 1 */
+    /** Edge Orientation: 12 elements, values from 0 to 1; empty for 2x2 */
     EO: Array<number>;
 };
 
@@ -74,7 +74,7 @@ type GanCubeFaceletsEvent = {
     type: "FACELETS";
     /** Serial number, value range 0-255, increased in a circle on each facelets state change */
     serial: number;
-    /** Cube facelets state in the Kociemba notation like "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB" */
+    /** Cube facelets state (24 characters for 2x2) in the Kociemba notation like "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB" */
     facelets: string;
     /** Cube state representing corners and edges orientation and permutation */
     state: GanCubeState;
@@ -817,8 +817,11 @@ class GanGen3ProtocolDriver implements GanProtocolDriver {
  * Driver implementation for GAN Gen4 protocol, supported cubes:
  *  - GAN12 ui Maglev
  *  - GAN14 ui FreePlay
+ *  - GAN 251 UI (2x2)
  */
 class GanGen4ProtocolDriver implements GanProtocolDriver {
+
+    constructor(private readonly cubeSize: 2 | 3 = 3) {}
 
     private serial: number = -1;
     private lastSerial: number = -1;
@@ -1067,18 +1070,20 @@ class GanGen4ProtocolDriver implements GanProtocolDriver {
             co.push((3 - (sum(co) % 3)) % 3);
 
             // Edges
-            for (let i = 0; i < 11; i++) {
-                ep.push(msg.getBitWord(69 + i * 4, 4));
-                eo.push(msg.getBitWord(113 + i, 1));
+            if (this.cubeSize === 3) {
+                for (let i = 0; i < 11; i++) {
+                    ep.push(msg.getBitWord(69 + i * 4, 4));
+                    eo.push(msg.getBitWord(113 + i, 1));
+                }
+                ep.push(66 - sum(ep));
+                eo.push((2 - (sum(eo) % 2)) % 2);
             }
-            ep.push(66 - sum(ep));
-            eo.push((2 - (sum(eo) % 2)) % 2);
 
             cubeEvents.push({
                 type: "FACELETS",
                 serial: serial,
                 timestamp: timestamp,
-                facelets: toKociembaFacelets(cp, co, ep, eo),
+                facelets: this.cubeSize === 2 ? to2x2Facelets(cp, co) : toKociembaFacelets(cp, co, ep, eo),
                 state: {
                     CP: cp,
                     CO: co,
