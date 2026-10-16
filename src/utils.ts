@@ -157,10 +157,24 @@ function toKociembaFacelets(cp: Array<number>, co: Array<number>, ep: Array<numb
     return facelets.join('');
 }
 
+/** Convert corners to 24 facelets: URFDLB, each face in row-major order. */
+function to2x2Facelets(cp: Array<number>, co: Array<number>): string {
+    const facelets: string[] = Array(24);
+    const cornerIndex = (index: number) => Math.floor(index / 9) * 4 + [0, 2, 6, 8].indexOf(index % 9);
+    for (let i = 0; i < 8; i++) {
+        for (let p = 0; p < 3; p++) {
+            facelets[cornerIndex(CORNER_FACELET_MAP[i][(p + co[i]) % 3])] =
+                'URFDLB'[Math.floor(CORNER_FACELET_MAP[cp[i]][p] / 9)];
+        }
+    }
+    return facelets.join('');
+}
+
 export {
     now,
     cubeTimestampLinearFit,
     cubeTimestampCalcSkew,
     toKociembaFacelets,
+    to2x2Facelets,
 }
 

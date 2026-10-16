@@ -41,6 +41,20 @@ export const GAN_GEN4_COMMAND_CHARACTERISTIC = "0000fff5-0000-1000-8000-00805f9b
 /** GAN Gen4 protocol BLE state characteristic */
 export const GAN_GEN4_STATE_CHARACTERISTIC = "0000fff6-0000-1000-8000-00805f9b34fb";
 
+/** Alternate command characteristic on GAN 251 UI firmware. */
+export const GAN_251_COMMAND_CHARACTERISTIC_ALT = "0000fff7-0000-1000-8000-00805f9b34fb";
+
+/** GAN 251 UI uses Gen4 framing with a model-specific root key and IV. */
+export const GAN_251_ENCRYPTION_KEY = {
+    key: [0x58, 0x98, 0x61, 0xFC, 0x1F, 0xEC, 0xD7, 0x60, 0x9F, 0x85, 0xD3, 0x62, 0xBE, 0x37, 0x17, 0x2C],
+    iv: [0x7F, 0x61, 0xD0, 0x52, 0x75, 0xC1, 0x39, 0x52, 0x08, 0x2E, 0x54, 0x1D, 0x8A, 0x78, 0x63, 0x4D],
+};
+
+/** Advertising aliases used by GAN 251 UI (case-insensitive model detection). */
+export function isGan251Device(name: string | undefined): boolean {
+    return /^gan(?:251ui|ic251)(?:[_-]|$)/i.test(name || '');
+}
+
 /** List of Company Identifier Codes, fill with all values [0x0001, 0xFF01] possible for GAN cubes */
 export const GAN_CIC_LIST = Array(256).fill(undefined).map((_v, i) => (i << 8) | 0x01);
 

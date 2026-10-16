@@ -97,6 +97,7 @@ async function connectGanCube(customMacAddressProvider?: MacAddressProvider): Pr
     // Request user for the bluetooth device (popup selection dialog)
     const nameFilters: BluetoothLEScanFilter[] = [
         { namePrefix: "GAN" },
+        { namePrefix: "gan" },
         { namePrefix: "MG" },
         { namePrefix: "AiCube" },
     ];
@@ -172,12 +173,16 @@ async function connectGanCube(customMacAddressProvider?: MacAddressProvider): Pr
             validateDecrypted: isValidGanGen3Packet,
         });
     } else if (pick === 'g4') {
+        const is2x2 = def.isGan251Device(device.name);
         const service = await gatt.getPrimaryService(def.GAN_GEN4_SERVICE);
-        let commandCharacteristic = await service.getCharacteristic(def.GAN_GEN4_COMMAND_CHARACTERISTIC);
+        let commandCharacteristic = await service.getCharacteristic(def.GAN_GEN4_COMMAND_CHARACTERISTIC).catch((error: unknown) => {
+            if (!is2x2) throw error;
+            return service.getCharacteristic(def.GAN_251_COMMAND_CHARACTERISTIC_ALT);
+        });
         let stateCharacteristic = await service.getCharacteristic(def.GAN_GEN4_STATE_CHARACTERISTIC);
-        let key = def.GAN_ENCRYPTION_KEYS[0];
+        let key = is2x2 ? def.GAN_251_ENCRYPTION_KEY : def.GAN_ENCRYPTION_KEYS[0];
         let encrypter = new GanGen4CubeEncrypter(new Uint8Array(key.key), new Uint8Array(key.iv), salt);
-        let driver = new GanGen4ProtocolDriver();
+        let driver = new GanGen4ProtocolDriver(is2x2 ? 2 : 3);
         conn = await GanCubeClassicConnection.create(device, commandCharacteristic, stateCharacteristic, encrypter, driver, {
             validateDecrypted: isValidGanGen4Packet,
         });
