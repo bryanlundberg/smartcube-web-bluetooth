@@ -251,8 +251,7 @@ class GoCubeConnection implements SmartCubeConnection {
             }
             const newFacelet = facelet.join('');
             const curFacelet = this.prevCubie.toFaceCube();
-            if (newFacelet !== curFacelet) {
-                this.curCubie.fromFacelet(newFacelet);
+            if (newFacelet !== curFacelet && this.curCubie.fromFacelet(newFacelet) !== -1) {
                 const tmp = this.curCubie;
                 this.curCubie = this.prevCubie;
                 this.prevCubie = tmp;
